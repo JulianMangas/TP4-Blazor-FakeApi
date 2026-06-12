@@ -1,0 +1,48 @@
+﻿@page "/products"
+
+@using TP4BlazorHybrid.Models
+@using TP4BlazorHybrid.Services
+
+@inject ProductService ProductService
+
+<h3>Productos</h3>
+
+@if (products == null)
+{
+    <p>Cargando productos...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Categoría</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Title</td>
+                    <td>$ @product.Price</td>
+                    <td>@product.Category</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private List<Product>? products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await ProductService.GetProducts();
+    }
+
+}
