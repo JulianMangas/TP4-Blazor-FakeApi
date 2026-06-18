@@ -1,0 +1,77 @@
+﻿@page "/editar-producto/{id:int}"
+
+@using TP4BlazorHybrid.Models
+@using TP4BlazorHybrid.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject ProductService ProductService
+@inject NavigationManager Navigation
+@inject ProductCache Cache
+
+<h3>Editar Producto</h3>
+
+@if (producto == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <EditForm Model="producto" OnValidSubmit="Guardar">
+
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label>Título</label>
+            <InputText class="form-control" @bind-Value="producto.Title" />
+        </div>
+
+        <div class="mb-3">
+            <label>Precio</label>
+            <InputNumber class="form-control" @bind-Value="producto.Price" />
+        </div>
+
+        <div class="mb-3">
+            <label>Categoría</label>
+            <InputText class="form-control" @bind-Value="producto.Category" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">
+            Guardar Cambios
+        </button>
+
+    </EditForm>
+}
+
+@code {
+
+    [Parameter]
+    public int id { get; set; }
+
+    Product? producto;
+
+    protected override async Task OnInitializedAsync()
+    {
+        producto = await ProductService.GetProductById(id);
+    }
+
+    async Task Guardar()
+    {
+        var resultado = await ProductService.UpdateProduct(id, producto!);
+
+        if (resultado != null)
+        {
+            var prod = Cache.Products.FirstOrDefault(p => p.Id == id);
+
+            if (prod != null)
+            {
+                prod.Title = producto!.Title;
+                prod.Price = producto.Price;
+                prod.Category = producto.Category;
+            }
+        }
+
+        Navigation.NavigateTo("/products");
+    }
+
+}

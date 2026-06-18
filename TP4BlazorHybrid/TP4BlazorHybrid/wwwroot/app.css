@@ -99,3 +99,27 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+.card {
+    border-radius: 15px;
+}
+
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.btn {
+    transition: 0.3s;
+}
+
+    .btn:hover {
+        transform: scale(1.05);
+    }
+
+.shadow {
+    box-shadow: 0px 5px 15px rgba(0,0,0,.15) !important;
+}
+
+.display-6 {
+    font-weight: bold;
+}

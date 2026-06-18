@@ -4,36 +4,158 @@
 @using TP4BlazorHybrid.Services
 
 @inject ProductService ProductService
+@inject NavigationManager Navigation
+@inject ProductCache Cache
 
-<h3>Productos</h3>
+<div class="container mt-4">
 
+    <div class="p-4 mb-4 bg-primary text-white rounded shadow">
+
+        <h1 class="display-6">
+            📦 Gestión de Productos
+        </h1>
+
+        <p class="lead mb-0">
+            Administración del catálogo de productos de la tienda.
+        </p>
+
+    </div>
+</div>
+<div class="row mb-4">
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-success shadow">
+
+            <div class="card-body">
+
+                <h5>Total de Productos</h5>
+
+                <h2>@(products?.Count ?? 0)</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-warning shadow">
+
+            <div class="card-body">
+
+                <h5>Precio Promedio</h5>
+
+                <h2>$@(products?.Average(p => p.Price).ToString("0.00") ?? "0")</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-info shadow">
+
+            <div class="card-body">
+
+                <h5>Categorías</h5>
+
+                <h2>@(products?.Select(p => p.Category).Distinct().Count() ?? 0)</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="row mb-3">
+
+    <div class="col-md-6">
+        <input class="form-control form-control-lg"
+               placeholder="🔎 Buscar producto..."
+               @bind="textoBusqueda"
+               @bind:event="oninput" />
+    </div>
+
+    <div class="col-md-6 text-end">
+
+        <NavLink class="btn btn-success btn-lg"
+                 href="/AgregarProducto">
+
+            ➕ Nuevo Producto
+
+        </NavLink>
+
+    </div>
+
+</div>
+<p class="text-muted">
+    Total de productos: @ProductosFiltrados.Count()
+</p>
+ 
 @if (products == null)
 {
     <p>Cargando productos...</p>
 }
 else
 {
-    <table class="table">
-        <thead>
+    <table class="table table-hover table-striped table-bordered shadow">
+
+        <thead class="table-dark">
             <tr>
                 <th>ID</th>
                 <th>Producto</th>
                 <th>Precio</th>
                 <th>Categoría</th>
+                <th>Acciones</th>
             </tr>
         </thead>
+
         <tbody>
-            @foreach (var product in products)
+            @foreach (var product in ProductosFiltrados)
             {
                 <tr>
                     <td>@product.Id</td>
                     <td>@product.Title</td>
-                    <td>$ @product.Price</td>
-                    <td>@product.Category</td>
+
+                    <td>
+                        <span class="badge bg-success fs-6">
+                            $@product.Price
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="badge bg-secondary">
+                            @product.Category
+                        </span>
+                    </td>
+
+                    <td>
+                        <button class="btn btn-warning btn-sm me-2"
+                                @onclick="() => Editar(product.Id)">
+                            ✏️ Editar
+                        </button>
+
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => Eliminar(product.Id)">
+                            🗑 Eliminar
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
+
     </table>
+
+    <div class="mt-3 text-end">
+        <span class="badge bg-primary fs-6">
+            Total mostrados: @ProductosFiltrados.Count()
+        </span>
+    </div>
 }
 
 @code {
@@ -42,7 +164,72 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        products = await ProductService.GetProducts();
+        await CargarProductos();
+    }
+    async Task CargarProductos()
+    {
+        if (Cache.Products.Count == 0)
+        {
+            Cache.Products = await ProductService.GetProducts() ?? new();
+        }
+
+        products = Cache.Products;
+    }
+    async Task Eliminar(int id)
+    {
+        var producto = products?.FirstOrDefault(p => p.Id == id);
+
+        if (producto == null)
+            return;
+
+        bool confirmar = await Application.Current!.Windows[0].Page!.DisplayAlert(
+            "Confirmar eliminación",
+            $"¿Desea eliminar este producto?\n\n" +
+            $"ID: {producto.Id}\n" +
+            $"Producto: {producto.Title}",
+            "Sí",
+            "No");
+
+        if (!confirmar)
+            return;
+
+        bool eliminado = await ProductService.DeleteProduct(id);
+
+        if (eliminado)
+        {
+            products!.Remove(producto);
+
+            await Application.Current!.Windows[0].Page!.DisplayAlert(
+                "Éxito",
+                "Producto eliminado correctamente.",
+                "Aceptar");
+
+            StateHasChanged();
+        }
+        else
+        {
+            await Application.Current!.Windows[0].Page!.DisplayAlert(
+                "Error",
+                "No se pudo eliminar el producto.",
+                "Aceptar");
+        }
     }
 
+    void Editar(int id)
+    {
+        Navigation.NavigateTo($"/editar-producto/{id}");
+    }
+
+    void AgregarProducto()
+    {
+        Navigation.NavigateTo("/AgregarProducto");
+    }
+    string textoBusqueda = "";
+
+    IEnumerable<Product> ProductosFiltrados =>
+     string.IsNullOrWhiteSpace(textoBusqueda)
+         ? products ?? Enumerable.Empty<Product>()
+         : products!.Where(p =>
+             p.Title.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)
+             || p.Category.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase));
 }

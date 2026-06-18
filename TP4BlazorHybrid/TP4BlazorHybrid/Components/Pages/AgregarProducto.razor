@@ -1,0 +1,52 @@
+﻿@page "/AgregarProducto"
+
+@using TP4BlazorHybrid.Models
+@using TP4BlazorHybrid.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject ProductService ProductService
+@inject NavigationManager Navigation
+@inject ProductCache Cache
+
+<h3>Agregar Producto</h3>
+
+<EditForm Model="producto" OnValidSubmit="Guardar">
+
+    <div class="mb-3">
+        <label>Título</label>
+        <InputText class="form-control" @bind-Value="producto.Title" />
+    </div>
+
+    <div class="mb-3">
+        <label>Precio</label>
+        <InputNumber class="form-control" @bind-Value="producto.Price" />
+    </div>
+
+    <div class="mb-3">
+        <label>Categoría</label>
+        <InputText class="form-control" @bind-Value="producto.Category" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Guardar
+    </button>
+
+</EditForm>
+
+@code {
+
+    Product producto = new();
+
+    async Task Guardar()
+    {
+        var nuevoProducto = await ProductService.CreateProduct(producto);
+
+        if (nuevoProducto != null)
+        {
+            Cache.Products.Add(nuevoProducto);
+        }
+
+        Navigation.NavigateTo("/products");
+    }
+
+}

@@ -21,6 +21,7 @@ namespace TP4BlazorHybrid
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
+            builder.Services.AddSingleton<ProductCache>();
 #endif      
             builder.Services.AddScoped(sp =>
                 new HttpClient
